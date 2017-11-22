@@ -1,0 +1,46 @@
+package net.studikode.effplayground.effects
+
+import org.atnos.eff._
+import org.atnos.eff.option._
+
+import net.studikode.effplayground.effects.EncodeEffect.{EncodeEffect, Encode}
+import net.studikode.effplayground.Encoder
+
+object EncodeInterpreter {
+
+  type HasOption[R] = MemberIn[Option, R]
+
+  private def encode[R : HasOption](message: String): Eff[R, String] =
+    for {
+      //Encoder.encode returns option but we lift the option into an effect
+      //and return Eff[R, String] instead
+      //a new Eff monad with a new effect set and a string
+      encoded <- fromOption(Encoder.encode(message, "me"))
+    } yield encoded
+
+  // It strips off an effect from a set of effects
+  def runEncode[
+    R,
+    U : Member.Aux[EncodeEffect, R, ?]
+      : HasOption,
+    A
+  ](eff: Eff[R, A]): Eff[U, A] = interpret.translate(eff) {
+    new Translate[EncodeEffect, U] {
+      // Not sure why need String here
+      //Not sure why cannot use Eff[U,X]
+      //It's because the type in the declaration was wrong, it was returning unit
+      def apply[X](action: EncodeEffect[X]): Eff[U, X] = action match {
+        //Sometimes this will run an error if the implicit function below
+        //doesn't have the correct effect set
+        case Encode(message) => encode[U](message)
+      }
+    }
+  }
+
+  //Why no parameter ? Because it doesn't need it to interpret
+  //It will take an Effect and return a new Effect set with smaller effect set
+  implicit class EncodeInterpreterOps[R,A](eff: Eff[R,A]) {
+    def runEncode[U: Member.Aux[EncodeEffect, R, ?] : HasOption](): Eff[U,A] =
+      EncodeInterpreter.runEncode(eff)
+  }
+}
