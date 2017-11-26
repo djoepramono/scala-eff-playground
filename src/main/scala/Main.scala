@@ -29,9 +29,17 @@ object Playground {
     // val task = program.runLog().runEval.runAsync
     // Await.result(task.runAsync, Duration.Inf)
 
-    //This is pretty much interpreting (i.e. run) all the way
-    val endResult = program.runEncode().runLog().runEval
+    //This is pretty much interpreting (i.e. run) all the way by running .run
+    //If you encounter error like org.atnos.eff.Eff[org.atnos.eff.NoFx, ...]
+    //that's because you have not put run or runTask
+    val endResult = program.runEncode().runLog().runOption.runEval
 
-    println(endResult);
+    // In the end of the day you still need to deal with Option
+    val output = endResult match {
+      case Some(x) => x.toString()
+      case None => "Nothing"
+    }
+
+    println(output)
   }
 }
