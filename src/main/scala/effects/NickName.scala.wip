@@ -1,0 +1,28 @@
+package net.studikode.effplayground.effects
+
+import org.atnos.eff.Eff.send
+import org.atnos.eff.{Eff, MemberIn}
+
+object NickName {
+
+  type HasNickName[R] = MemberIn[NickNameEffect, R]
+
+  val nicknames: List[String] = List(
+    "The Brave",
+    "The Smart One",
+    "The Conqueror",
+    "The Terminator",
+    "The Peacemaker",
+    "The Humble One",
+    "The Joker"
+  )
+
+  sealed trait NickNameEffect[A]
+  case class Generate(name: String) extends NickNameEffect[String]
+
+  //It is a good practice to have the same function name as the case class
+  def generate[R : HasNickName](name: String): Eff[R, String] = {
+    //third type parameter is String because Encode.encode returns string
+    send[NickNameEffect, R, String](Generate(name))
+  }
+}
